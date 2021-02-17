@@ -4,22 +4,24 @@
 from colored import fg,attr
 from os import system as sys
 from winsound import Beep
+from copy import deepcopy
+
 colours = [242,255,236,76]
 
 class board:
   def __init__(self):
     self.squares = [
-      '','','','','K','','','',
+      'R','N','B','Q','K','B','N','R',
+      'P','P','P','P','P','P','P','P',
       '','','','','','','','',
       '','','','','','','','',
       '','','','','','','','',
       '','','','','','','','',
-      '','','','','','','','',
-      '','','','','','','','',
-      'p','p','p','p','k','p','p','p'
+      'p','p','p','p','p','p','p','p',
+      'r','n','b','q','k','b','n','r'
     ]
     self.turn = 1
-    self.castle = {'K':0,'Q':0,'k':0,'q':0}
+    self.castle = {'K':1,'Q':1,'k':1,'q':1}
     self.kings = [60,4]
     self.last_move = (None,None)
 
@@ -221,21 +223,21 @@ class board:
         if p.lower() in ['p','n']:
           if k in self.marks(s):
             return True
-        elif p.lower() in ['r','q']:
+        if p.lower() in ['r','q']:
           if s%8 == k%8:
             if k in self.marks(s):
               return True
           elif s//8 == k//8:
             if k in self.marks(s):
               return True
-        elif p.lower() in ['b','q']:
+        if p.lower() in ['b','q']:
           if s%9 == k%9:
             if k in self.marks(s):
               return True
           elif s%7 == k%7:
             if k in self.marks(s):
               return True
-        elif p.lower() == 'k':
+        if p.lower() == 'k':
           continue
     return False
 
@@ -305,10 +307,11 @@ class board:
     material = 0
     weighted_material = 0
     for i in range(64):
-      value = piece_values[self.squares[i]]
-      position = (value * square_weights[i]) * position_weight
-      weighted_material += value + position
-      material += abs(value + position)
+      if self.squares[i]:
+        value = piece_values[self.squares[i]]
+        position = (value * square_weights[i]) * position_weight
+        weighted_material += value + position
+        material += abs(value + position)
     b_king_str = -(king_weight_m*material+king_weight_x)*square_weights[self.kings[0]]*position_weight
     w_king_str = (king_weight_m*material+king_weight_x)*square_weights[self.kings[1]]*position_weight
     castle = preserve_castle_weight*(self.castle['K'] or self.castle['Q']) - preserve_castle_weight*(self.castle['k'] or self.castle['q'])
@@ -324,7 +327,7 @@ class board:
         return None,10000*(-2*c+1)
       return None,0
     best, score = "Resign", 9999*(-2*c+1)
-    for move in moves:
+    for move in moves[::-1]:
       sim = self.sim_move(move[0],move[1])
       if layers:
         #print(f'considering move {mn(move)}, about to recur with score to beat {round(score,4)}')
@@ -416,13 +419,16 @@ class bot:
         'K':0
       },
       'preserve_castle_weight': 0.35,
-      'move_number_weight':2,
+      'move_number_weight':1,
       'position_weight':0.016,
-      'king_weight_at_60':-4,
-      'king_weight_at_2':3
+      'king_weight_at_60':-20,
+      'king_weight_at_2':-20
       }
     for value in values:
       self.values[value] = values[value]
+
+  def __str__(self):
+    return self.name
 
   def load_values(bot):
     for value in bot.values:
@@ -435,25 +441,23 @@ class bot:
 global square_weights, piece_values, preserve_castle_weight, move_number_weight, position_weight, king_weight_at_60, king_weight_at_2
 
    
-    
 
-jimothy = bot('jimothy')
-bot_2 = bot('bot_1',{'preserve_castle_weight':0,'move_number_weight':1,'king_weight_at_60':-15})
+bot_2 = bot('Old Robot',{'preserve_castle_weight':0,'move_number_weight':1,'king_weight_at_60':-15})
 
+difficulty = 2
 
 def main():
   b = board()
-  players = ['black','white']
-  ps = [jimothy, 'matthew']
+  ps = [bot_2,'New Robot']
 
   def turn(p):
     if type(p) != bot:
       possibles = b.all_moves(b.turn%2)
       if not possibles:
         if b.check(b.turn%2):
-          print(f"{players[b.turn%2]} has been checkmated. {players[2+~(b.turn%2)].title()} wins.")
+          print(f"{ps[b.turn%2]} has been checkmated. {ps[2+~(b.turn%2)]} wins.")
         else:
-          print(f"{players[b.turn%2]} is unable to move and has been stalemated. The game is a draw")
+          print(f"{ps[b.turn%2]} is unable to move and has been stalemated. The game is a draw")
         return 0
       print(f"It is currently {ps[b.turn%2]}'s move")
       waiting = 1
@@ -472,8 +476,8 @@ def main():
     else:
       p.load_values()
       print(f'{p.name} is thinking')
-      move = b.best_move(3)[0]
-      Beep(400,440)
+      move = b.best_move(difficulty)[0]
+      Beep(500,440)
       try:
         b.move(move[0],move[1])
       except:
@@ -495,7 +499,3 @@ def main():
 
 if __name__ == '__main__':
   input(main());
-  
-      
-          
-        
