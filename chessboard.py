@@ -1,15 +1,14 @@
-#generates a chessboard with n players
+#generates a chessboard with any amount of players
 
 import turtle, math
 
 def da(distance=0, angle:'radians'=0)->'point':
   return distance*math.cos(angle), distance*math.sin(angle)
 
-def along(p1:'point', p2:'point', ratio:('0<ratio<1'))->'point':
+def along(p1:'point', p2:'point', ratio:'0<ratio<1')->'point':
   return p1[0]+(p2[0]-p1[0])*ratio, p1[1]+(p2[1]-p1[1])*ratio
 
-tau = 2*math.pi
-colours = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'lawn green', 'magenta', 'dodger blue', 'pink', 'maroon', 'silver', 'black']
+colours = ['#f00', '#00f', '#0f0', '#ff0', '#f0f', '#0ff', '#f70', '#7f0', '#f07', '#70f', '#07f', '#0f7', '#777']
 
 class T(turtle.Turtle):
   def __init__(self, shape='classic', undobuffersize=1000, visible=True):
@@ -26,10 +25,10 @@ class T(turtle.Turtle):
       self.clear()
     players = int(players*2)
     n = len(pieces)//2
-    self.pencolor('black')
+    self.pencolor('#fff')
 
     print('Generating sides...')
-    corners = [da(330,tau/players*i) for i in range(players)]
+    corners = [da(330,2*math.pi/players*i) for i in range(players)]
     mids = [along(corners[i], corners[(i+1)%players], 0.5) for i in range(players)]
 
     print('Drawing outline...')
@@ -64,8 +63,9 @@ class T(turtle.Turtle):
         self.w('P', along(along(corners[(player+1)%players], mids[(player+1)%players], 3/(2*n)), along(mids[player], (0,0), 3/(2*n)), pawn/n+1/(2*n)))
         self.w(pieces[pawn], along(along(corners[player], mids[(player-1)%players], 1/(2*n)), along(mids[player], (0,0), 1/(2*n)), pawn/n+1/(2*n)))
         self.w(pieces[::-1][pawn], along(along(corners[(player+1)%players], mids[(player+1)%players], 1/(2*n)), along(mids[player], (0,0), 1/(2*n)), pawn/n+1/(2*n)))
-
+        
     print('Done!')
    
 t = T()
 c = t.chessboard
+#for example, c(3, pieces='rrnbqkbnrr') creates a chessboard with 3 players and 2 extra rooks per player
